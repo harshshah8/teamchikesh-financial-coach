@@ -34,6 +34,20 @@ APP_BASE_URL="http://localhost:3000"
 
 If `APP_PASSCODE` is missing, the dev fallback passcode is `dev-passcode`.
 
+## OpenAI API Key
+
+1. Create an API key from the OpenAI dashboard.
+2. Put it only in local/server env files:
+
+```env
+OPENAI_API_KEY="your_api_key_here"
+OPENAI_MODEL="gpt-5.5-mini"
+```
+
+3. Restart the dev server after changing `.env.local`.
+
+Do not use `NEXT_PUBLIC_OPENAI_API_KEY`. The key must stay server-side.
+
 ## Security Notes
 
 - Do not commit `.env.local`.

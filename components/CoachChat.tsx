@@ -44,7 +44,7 @@ export function CoachChat() {
       <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
         <div className="flex flex-wrap gap-2">
           {suggestions.map((item) => (
-            <button key={item} onClick={() => ask(item)} className="rounded-md bg-mint px-3 py-2 text-left text-sm font-medium text-ink">
+            <button key={item} onClick={() => ask(item)} className="interactive-button rounded-md bg-mint px-3 py-2 text-left text-sm font-medium text-ink">
               {item}
             </button>
           ))}
@@ -71,7 +71,7 @@ export function CoachChat() {
             placeholder="Ask Coach"
             className="h-12 min-w-0 flex-1 rounded-md border border-black/15 px-3"
           />
-          <button className="flex h-12 w-12 items-center justify-center rounded-md bg-ink text-white" disabled={pending} aria-label="Ask">
+          <button className="interactive-button flex h-12 w-12 items-center justify-center rounded-md bg-ink text-white" disabled={pending} aria-label="Ask">
             <Send size={18} />
           </button>
         </form>

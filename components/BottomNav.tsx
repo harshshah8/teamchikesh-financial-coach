@@ -28,8 +28,8 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={clsx(
-                "flex h-14 flex-col items-center justify-center gap-1 rounded-md text-xs font-medium transition",
-                active ? "bg-ink text-white" : "text-ink/65 hover:bg-black/5"
+                "interactive-button flex h-14 flex-col items-center justify-center gap-1 rounded-md text-xs font-medium",
+                active ? "bg-ink text-white" : "text-ink/65 hover:bg-mint hover:text-ink"
               )}
             >
               <Icon size={19} />

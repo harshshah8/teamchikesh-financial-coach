@@ -39,16 +39,16 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-5 grid gap-3 px-4 sm:grid-cols-2">
-        <Link href="/events" className="rounded-lg bg-ink p-4 font-medium text-white">
+        <Link href="/events" className="interactive-button rounded-lg bg-ink p-4 font-medium text-white">
           Add Trip Expense
         </Link>
-        <Link href="/records" className="rounded-lg bg-sage p-4 font-medium text-white">
+        <Link href="/records" className="interactive-button rounded-lg bg-sage p-4 font-medium text-white">
           Add Wealth Record
         </Link>
-        <Link href="/coach" className="rounded-lg bg-clay p-4 font-medium text-white">
+        <Link href="/coach" className="interactive-button rounded-lg bg-clay p-4 font-medium text-white">
           Ask Coach
         </Link>
-        <Link href="/reports" className="rounded-lg bg-sky p-4 font-medium text-ink">
+        <Link href="/reports" className="interactive-button rounded-lg bg-sky p-4 font-medium text-ink">
           View Report
         </Link>
       </section>
@@ -60,7 +60,7 @@ export default async function HomePage() {
             activeEvents.map((event) => {
               const total = event.transactions.reduce((sum, txn) => sum + Number(txn.amount), 0);
               return (
-                <Link key={event.id} href={`/events/${event.id}`} className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+                <Link key={event.id} href={`/events/${event.id}`} className="interactive-card rounded-lg border border-black/10 bg-white p-4 shadow-soft">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold">{event.name}</p>

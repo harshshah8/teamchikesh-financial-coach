@@ -44,7 +44,7 @@ export default async function RecordsPage() {
               This is a liability
             </label>
             <textarea name="notes" placeholder="Notes" className="min-h-20 rounded-md border border-black/15 p-3" />
-            <button className="h-12 rounded-md bg-ink font-medium text-white">Save Wealth Record</button>
+            <button className="interactive-button h-12 rounded-md bg-ink font-medium text-white">Save Wealth Record</button>
           </div>
         </form>
 
@@ -67,7 +67,7 @@ export default async function RecordsPage() {
             <input name="amount" inputMode="decimal" placeholder="Amount" className="h-12 rounded-md border border-black/15 px-3" required />
             <input name="date" type="date" className="h-12 rounded-md border border-black/15 px-3" />
             <textarea name="notes" placeholder="Notes" className="min-h-20 rounded-md border border-black/15 p-3" />
-            <button className="h-12 rounded-md bg-sage font-medium text-white">Save Manual Record</button>
+            <button className="interactive-button h-12 rounded-md bg-sage font-medium text-white">Save Manual Record</button>
           </div>
         </form>
       </section>

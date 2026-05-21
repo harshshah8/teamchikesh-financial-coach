@@ -9,7 +9,7 @@ export default async function UploadPage() {
     <main>
       <PageHeader title="Upload" subtitle="Statement upload comes after the trip and records loop is stable." />
       <section className="px-4">
-        <div className="rounded-lg border border-black/10 bg-white p-5 shadow-soft">
+        <div className="interactive-card rounded-lg border border-black/10 bg-white p-5 shadow-soft">
           <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-mint">
             <Upload size={22} />
           </div>

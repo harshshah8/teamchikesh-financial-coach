@@ -30,7 +30,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         </div>
         <form action={endEvent} className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
           <input type="hidden" name="eventId" value={summary.event.id} />
-          <button className="h-12 w-full rounded-md bg-clay font-medium text-white">Mark Ended</button>
+          <button className="interactive-button h-12 w-full rounded-md bg-clay font-medium text-white">Mark Ended</button>
           {summary.event.aiSummary ? <p className="mt-3 text-sm text-ink/65">{summary.event.aiSummary}</p> : null}
         </form>
       </section>
@@ -64,7 +64,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </div>
             <input name="date" type="date" className="h-12 rounded-md border border-black/15 px-3" />
             <textarea name="notes" placeholder="Notes" className="min-h-24 rounded-md border border-black/15 p-3" />
-            <button className="h-12 rounded-md bg-ink font-medium text-white">Save Expense</button>
+            <button className="interactive-button h-12 rounded-md bg-ink font-medium text-white">Save Expense</button>
           </div>
         </form>
       </section>

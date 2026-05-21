@@ -25,7 +25,7 @@ export function LoginForm() {
         autoFocus
       />
       {state?.error ? <p className="mt-3 text-sm text-clay">{state.error}</p> : null}
-      <button className="mt-5 h-12 w-full rounded-md bg-ink font-medium text-white" disabled={pending}>
+      <button className="interactive-button mt-5 h-12 w-full rounded-md bg-ink font-medium text-white" disabled={pending}>
         {pending ? "Opening..." : "Open app"}
       </button>
       {!process.env.NEXT_PUBLIC_HIDE_DEV_HINT ? <p className="mt-4 text-xs text-ink/45">Local fallback passcode: dev-passcode</p> : null}

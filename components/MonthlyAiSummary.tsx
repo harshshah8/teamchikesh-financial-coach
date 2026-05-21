@@ -40,7 +40,7 @@ export function MonthlyAiSummary({ month }: { month: string }) {
           <button
             onClick={generateSummary}
             disabled={pending}
-            className="flex h-11 items-center gap-2 rounded-md bg-ink px-3 text-sm font-medium text-white disabled:opacity-60"
+            className="interactive-button flex h-11 items-center gap-2 rounded-md bg-ink px-3 text-sm font-medium text-white disabled:opacity-60"
           >
             <Sparkles size={17} />
             {pending ? "Generating" : "Generate"}

@@ -24,7 +24,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </label>
           <div className="mt-2 flex gap-2">
             <input id="month" name="month" defaultValue={month} className="h-12 min-w-0 flex-1 rounded-md border border-black/15 px-3" />
-            <button className="rounded-md bg-ink px-4 font-medium text-white">View</button>
+            <button className="interactive-button rounded-md bg-ink px-4 font-medium text-white">View</button>
           </div>
         </form>
       </section>

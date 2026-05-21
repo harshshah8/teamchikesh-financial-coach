@@ -36,7 +36,7 @@ export default async function EventsPage() {
               <input name="startDate" type="date" className="h-12 rounded-md border border-black/15 px-3" />
             </div>
             <input name="budget" inputMode="numeric" placeholder="Budget optional" className="h-12 rounded-md border border-black/15 px-3" />
-            <button className="h-12 rounded-md bg-ink font-medium text-white">Create Event</button>
+            <button className="interactive-button h-12 rounded-md bg-ink font-medium text-white">Create Event</button>
           </div>
         </form>
       </section>
@@ -45,7 +45,7 @@ export default async function EventsPage() {
         {events.map((event) => {
           const total = event.transactions.reduce((sum, txn) => sum + Number(txn.amount), 0);
           return (
-            <Link key={event.id} href={`/events/${event.id}`} className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+            <Link key={event.id} href={`/events/${event.id}`} className="interactive-card rounded-lg border border-black/10 bg-white p-4 shadow-soft">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-semibold">{event.name}</p>
