@@ -11,6 +11,7 @@ Private, mobile-first personal finance coach for Harsh and Anubhuti.
 - Records flow: wealth snapshots, liabilities, manual income/expense records
 - Dashboard and monthly report calculations
 - Coach chat that answers initial event/monthly/net-worth questions from database totals
+- CSV/XLSX statement upload with rule-based classification and basic duplicate handling
 
 ## Local Setup
 
@@ -47,6 +48,16 @@ OPENAI_MODEL="gpt-5.4-mini"
 3. Restart the dev server after changing `.env.local`.
 
 Do not use `NEXT_PUBLIC_OPENAI_API_KEY`. The key must stay server-side.
+
+## Statement Upload
+
+The MVP parser supports CSV/XLSX files with common columns:
+
+- Date: `Date`, `Transaction Date`, `Txn Date`, `Value Date`, `Posted Date`
+- Description: `Description`, `Narration`, `Particulars`, `Details`, `Merchant`, `Remarks`
+- Amount: either one `Amount` column or separate `Debit`/`Credit` columns
+
+Classification is deterministic for now. Rules and heuristics handle common cases like food spends, credit card payments, SIP/mutual fund investments, refunds, transfers, and salary. Unknown or low-confidence rows are marked for review.
 
 ## Security Notes
 

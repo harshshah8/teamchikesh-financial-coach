@@ -45,10 +45,13 @@ export default async function HomePage() {
         <Link href="/records" className="interactive-button rounded-lg bg-sage p-4 font-medium text-white">
           Add Wealth Record
         </Link>
+        <Link href="/upload" className="interactive-button rounded-lg bg-sky p-4 font-medium text-ink">
+          Upload Statement
+        </Link>
         <Link href="/coach" className="interactive-button rounded-lg bg-clay p-4 font-medium text-white">
           Ask Coach
         </Link>
-        <Link href="/reports" className="interactive-button rounded-lg bg-sky p-4 font-medium text-ink">
+        <Link href="/reports" className="interactive-button rounded-lg bg-mint p-4 font-medium text-ink">
           View Report
         </Link>
       </section>

@@ -1,6 +1,6 @@
 "use server";
 
-import { EventStatus, EventType, ExpenseType, PaymentMode, TransactionDirection, TransactionSource, Treatment } from "@prisma/client";
+import { EventStatus, EventType, ExpenseType, PaymentMode, TransactionDirection, TransactionSource, Treatment, UploadStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { currentMonthKey } from "@/lib/formatting/dates";
 import { getEventSummary } from "@/lib/calculations/event";
 import { formatMoney } from "@/lib/formatting/money";
+import { classifyStatementRow, parseStatementFile } from "@/lib/parsing/statement";
 
 export async function login(_: unknown, formData: FormData) {
   const passcode = String(formData.get("passcode") ?? "");
@@ -186,4 +187,155 @@ export async function addManualRecord(formData: FormData) {
   revalidatePath("/records");
   revalidatePath("/");
   revalidatePath("/reports");
+}
+
+export async function uploadStatement(formData: FormData) {
+  const ownerId = String(formData.get("ownerId") ?? "");
+  const accountId = String(formData.get("accountId") ?? "");
+  const month = String(formData.get("month") ?? currentMonthKey());
+  const file = formData.get("file");
+
+  if (!ownerId || !accountId || !(file instanceof File) || file.size === 0) {
+    return;
+  }
+
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, ownerId }
+  });
+
+  if (!account) return;
+
+  const upload = await prisma.statementUpload.create({
+    data: {
+      ownerId,
+      accountId,
+      month,
+      fileName: file.name,
+      fileType: file.type || file.name.split(".").pop() || "unknown",
+      status: UploadStatus.UPLOADED
+    }
+  });
+
+  try {
+    const [rows, rules] = await Promise.all([
+      parseStatementFile(file),
+      prisma.rule.findMany({ orderBy: { priority: "asc" } })
+    ]);
+
+    if (!rows.length) {
+      await prisma.statementUpload.update({
+        where: { id: upload.id },
+        data: { status: UploadStatus.FAILED, processedAt: new Date() }
+      });
+      redirect(`/upload?uploadId=${upload.id}`);
+    }
+
+    let needsReview = false;
+
+    for (const row of rows) {
+      const classified = classifyStatementRow({ row, accountType: account.type, rules });
+      if (classified.treatment === Treatment.UNKNOWN || classified.confidence < 0.7) {
+        needsReview = true;
+      }
+
+      const transaction = await prisma.transaction.create({
+        data: {
+          date: classified.date,
+          ownerId,
+          accountId,
+          amount: classified.amount,
+          direction: classified.direction,
+          description: classified.description,
+          merchant: classified.merchant,
+          category: classified.category,
+          subcategory: classified.subcategory,
+          treatment: classified.treatment,
+          expenseType: classified.expenseType,
+          paymentMode: classified.paymentMode,
+          source: TransactionSource.STATEMENT,
+          sourceFileId: upload.id,
+          confidence: classified.confidence,
+          notes: classified.reason
+        }
+      });
+
+      if (classified.treatment === Treatment.EXPENSE) {
+        await markManualEventDuplicate({
+          ownerId,
+          amount: classified.amount,
+          date: classified.date,
+          statementTransactionId: transaction.id,
+          statementCategory: classified.category
+        });
+      }
+    }
+
+    await prisma.statementUpload.update({
+      where: { id: upload.id },
+      data: {
+        status: needsReview ? UploadStatus.NEEDS_REVIEW : UploadStatus.COMPLETED,
+        processedAt: new Date()
+      }
+    });
+  } catch {
+    await prisma.statementUpload.update({
+      where: { id: upload.id },
+      data: { status: UploadStatus.FAILED, processedAt: new Date() }
+    });
+  }
+
+  revalidatePath("/upload");
+  revalidatePath("/");
+  revalidatePath("/reports");
+  redirect(`/upload?uploadId=${upload.id}`);
+}
+
+async function markManualEventDuplicate({
+  ownerId,
+  amount,
+  date,
+  statementTransactionId,
+  statementCategory
+}: {
+  ownerId: string;
+  amount: number;
+  date: Date;
+  statementTransactionId: string;
+  statementCategory: string;
+}) {
+  const start = new Date(date);
+  start.setDate(start.getDate() - 2);
+  const end = new Date(date);
+  end.setDate(end.getDate() + 2);
+
+  const manualMatch = await prisma.transaction.findFirst({
+    where: {
+      ownerId,
+      amount,
+      date: { gte: start, lte: end },
+      source: TransactionSource.MANUAL_EVENT,
+      treatment: Treatment.EXPENSE,
+      duplicateOfTransactionId: null
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  if (!manualMatch) return;
+
+  await prisma.transaction.update({
+    where: { id: statementTransactionId },
+    data: {
+      eventId: manualMatch.eventId,
+      category: statementCategory || manualMatch.category
+    }
+  });
+
+  await prisma.transaction.update({
+    where: { id: manualMatch.id },
+    data: {
+      treatment: Treatment.DUPLICATE,
+      duplicateOfTransactionId: statementTransactionId,
+      notes: manualMatch.notes ? `${manualMatch.notes}\nMatched with statement upload.` : "Matched with statement upload."
+    }
+  });
 }
