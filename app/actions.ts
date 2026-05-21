@@ -8,6 +8,7 @@ import { AUTH_COOKIE, hasValidPasscode } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { currentMonthKey } from "@/lib/formatting/dates";
 import { getEventSummary } from "@/lib/calculations/event";
+import { formatMoney } from "@/lib/formatting/money";
 
 export async function login(_: unknown, formData: FormData) {
   const passcode = String(formData.get("passcode") ?? "");
@@ -83,6 +84,17 @@ export async function addEventExpense(formData: FormData) {
     }
   });
 
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { status: true } });
+  if (event?.status === EventStatus.ENDED) {
+    const summary = await getEventSummary(eventId);
+    if (summary) {
+      await prisma.event.update({
+        where: { id: eventId },
+        data: { aiSummary: buildEventSummaryText(summary.event.name, summary.total, summary.transactionCount) }
+      });
+    }
+  }
+
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/");
 }
@@ -92,7 +104,7 @@ export async function endEvent(formData: FormData) {
   const summary = await getEventSummary(eventId);
   const aiSummary =
     summary && summary.total > 0
-      ? `${summary.event.name} ended with total tracked spend of ${summary.total.toFixed(0)} across ${summary.transactionCount} expense entries.`
+      ? buildEventSummaryText(summary.event.name, summary.total, summary.transactionCount)
       : "Event ended. Add expenses to generate a useful summary.";
 
   await prisma.event.update({
@@ -106,6 +118,10 @@ export async function endEvent(formData: FormData) {
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/events");
+}
+
+function buildEventSummaryText(eventName: string, total: number, transactionCount: number) {
+  return `${eventName} has total tracked spend of ${formatMoney(total)} across ${transactionCount} expense entries.`;
 }
 
 export async function addWealthRecord(formData: FormData) {
