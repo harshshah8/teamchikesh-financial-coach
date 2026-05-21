@@ -8,11 +8,14 @@ export function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-export async function generateCoachText(prompt: string) {
+export async function generateCoachText({ system, prompt }: { system: string; prompt: string }) {
   const client = getOpenAIClient();
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_MODEL || "gpt-5.5-mini",
-    messages: [{ role: "user", content: prompt }]
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: prompt }
+    ]
   });
 
   return response.choices[0]?.message.content ?? "";

@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/PageHeader";
 import { DashboardCard } from "@/components/DashboardCard";
 import { SimpleBarChart, SimplePieChart } from "@/components/Charts";
+import { MonthlyAiSummary } from "@/components/MonthlyAiSummary";
 import { requireAuth } from "@/lib/auth";
 import { currentMonthKey } from "@/lib/formatting/dates";
 import { formatMoney } from "@/lib/formatting/money";
@@ -53,6 +54,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           />
         </div>
       </section>
+      <MonthlyAiSummary month={month} />
     </main>
   );
 }
