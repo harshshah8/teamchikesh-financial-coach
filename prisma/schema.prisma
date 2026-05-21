@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,9 +13,10 @@ model User {
   role      String?
   createdAt DateTime @default(now())
 
-  accounts      Account[]
-  transactions  Transaction[]
-  wealthRecords WealthRecord[]
+  accounts         Account[]
+  transactions     Transaction[]
+  wealthRecords    WealthRecord[]
+  statementUploads StatementUpload[]
 }
 
 model Account {
@@ -51,16 +52,16 @@ model Event {
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  date        DateTime
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
+  id      String   @id @default(cuid())
+  date    DateTime
+  ownerId String
+  owner   User     @relation(fields: [ownerId], references: [id])
 
-  accountId   String?
-  account     Account? @relation(fields: [accountId], references: [id])
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id])
 
-  eventId     String?
-  event       Event?   @relation(fields: [eventId], references: [id])
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id])
 
   amount      Decimal
   direction   TransactionDirection
@@ -77,12 +78,12 @@ model Transaction {
   sourceFileId String?
   sourceFile   StatementUpload? @relation(fields: [sourceFileId], references: [id])
 
-  confidence  Float?
+  confidence               Float?
   duplicateOfTransactionId String?
-  notes       String?
+  notes                    String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([eventId])
   @@index([ownerId])
@@ -91,51 +92,56 @@ model Transaction {
 }
 
 model WealthRecord {
-  id          String   @id @default(cuid())
-  month       String
-  ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
+  id      String @id @default(cuid())
+  month   String
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
 
   recordType  String
   assetType   String
   platform    String?
   amount      Decimal
-  isLiability Boolean  @default(false)
+  isLiability Boolean @default(false)
   notes       String?
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([month])
   @@index([ownerId])
 }
 
 model StatementUpload {
-  id          String       @id @default(cuid())
-  ownerId     String
-  accountId   String
-  account     Account      @relation(fields: [accountId], references: [id])
+  id        String  @id @default(cuid())
+  ownerId   String
+  owner     User    @relation(fields: [ownerId], references: [id])
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
 
-  month       String
-  fileName    String
-  fileType    String
-  status      UploadStatus @default(UPLOADED)
+  month    String
+  fileName String
+  fileType String
+  status   UploadStatus @default(UPLOADED)
 
-  uploadedAt  DateTime @default(now())
+  uploadedAt  DateTime  @default(now())
   processedAt DateTime?
 
   transactions Transaction[]
+
+  @@index([ownerId])
+  @@index([accountId])
+  @@index([month])
 }
 
 model Rule {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   keyword     String
   merchant    String?
   category    String
   subcategory String?
   treatment   Treatment
   expenseType ExpenseType?
-  priority    Int         @default(100)
-  createdAt   DateTime    @default(now())
+  priority    Int          @default(100)
+  createdAt   DateTime     @default(now())
 }
 
 enum AccountType {

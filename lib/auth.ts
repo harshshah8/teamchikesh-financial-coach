@@ -17,6 +17,10 @@ export async function requireAuth() {
 export function hasValidPasscode(passcode: string) {
   const expected = process.env.APP_PASSCODE;
   if (!expected) {
+    if (process.env.NODE_ENV === "production") {
+      return false;
+    }
+
     return passcode === "dev-passcode";
   }
 
