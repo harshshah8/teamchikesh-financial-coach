@@ -101,6 +101,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (intent === "NET_WORTH") {
+    if (isExternalNetWorthQuestion(lower)) {
+      return NextResponse.json({
+        answer: "I can only answer net-worth questions for Harsh, Anubhuti, or Team Chikesh data stored in this app.",
+        data: { intent: "OUT_OF_SCOPE" }
+      });
+    }
+
     const wealth = await getWealthSummary(currentMonthKey());
     const fallbackAnswer = `Current month net worth is ${formatMoney(wealth.netWorth)}. Assets are ${formatMoney(wealth.assets)} and liabilities are ${formatMoney(wealth.liabilities)}.`;
     const answer = await explainWithAi({ question, fallbackAnswer, facts: { intent, ...wealth } });
@@ -137,6 +144,15 @@ export async function POST(request: NextRequest) {
 function ownerSentence(byOwner: { name: string; value: number }[]) {
   if (!byOwner.length) return "No paid-by split is available yet.";
   return byOwner.map((item) => `${item.name} paid ${formatMoney(item.value)}`).join("; ") + ".";
+}
+
+function isExternalNetWorthQuestion(lowerQuestion: string) {
+  const match = lowerQuestion.match(/\bnet worth\s+of\s+(.+)$/);
+  if (!match) return false;
+
+  const subject = match[1].replace(/[?.!]/g, "").trim();
+  const allowedSubjects = ["harsh", "anubhuti", "team chikesh", "us", "ours", "our", "we"];
+  return !allowedSubjects.some((allowed) => subject.includes(allowed));
 }
 
 async function explainWithAi({

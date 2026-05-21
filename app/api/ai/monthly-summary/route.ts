@@ -41,10 +41,21 @@ export async function POST(request: NextRequest) {
     2
   );
 
-  const summary = await generateCoachText({ system: coachSystemPrompt, prompt });
+  try {
+    const summary = await generateCoachText({ system: coachSystemPrompt, prompt });
 
-  return NextResponse.json({
-    summary,
-    facts: { monthly, wealth }
-  });
+    return NextResponse.json({
+      summary,
+      facts: { monthly, wealth }
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown OpenAI error";
+    return NextResponse.json(
+      {
+        error: `OpenAI request failed: ${message}`,
+        facts: { monthly, wealth }
+      },
+      { status: 502 }
+    );
+  }
 }

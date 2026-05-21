@@ -13,20 +13,26 @@ export function MonthlyAiSummary({ month }: { month: string }) {
     setError("");
     setSummary("");
 
-    const response = await fetch("/api/ai/monthly-summary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ month })
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/api/ai/monthly-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month })
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
 
-    if (!response.ok) {
-      setError(data.error ?? "Could not generate AI summary.");
-    } else {
-      setSummary(data.summary ?? "");
+      if (!response.ok) {
+        setError(data.error ?? "Could not generate AI summary.");
+      } else {
+        setSummary(data.summary ?? "");
+      }
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "Unknown error";
+      setError(`Could not read AI summary response: ${message}`);
+    } finally {
+      setPending(false);
     }
-
-    setPending(false);
   }
 
   return (

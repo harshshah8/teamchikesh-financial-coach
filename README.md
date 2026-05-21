@@ -28,7 +28,7 @@ For local development, set:
 DATABASE_URL="file:./dev.db"
 APP_PASSCODE="your-private-passcode"
 OPENAI_API_KEY=""
-OPENAI_MODEL="gpt-5.5-mini"
+OPENAI_MODEL="gpt-5.4-mini"
 APP_BASE_URL="http://localhost:3000"
 ```
 
@@ -41,7 +41,7 @@ If `APP_PASSCODE` is missing, the dev fallback passcode is `dev-passcode`.
 
 ```env
 OPENAI_API_KEY="your_api_key_here"
-OPENAI_MODEL="gpt-5.5-mini"
+OPENAI_MODEL="gpt-5.4-mini"
 ```
 
 3. Restart the dev server after changing `.env.local`.
