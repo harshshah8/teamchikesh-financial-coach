@@ -1,0 +1,216 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  role      String?
+  createdAt DateTime @default(now())
+
+  accounts      Account[]
+  transactions  Transaction[]
+  wealthRecords WealthRecord[]
+}
+
+model Account {
+  id           String      @id @default(cuid())
+  ownerId      String
+  owner        User        @relation(fields: [ownerId], references: [id])
+  name         String
+  type         AccountType
+  institution  String?
+  purpose      String?
+  statementDay Int?
+  dueDay       Int?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+
+  transactions Transaction[]
+  uploads      StatementUpload[]
+}
+
+model Event {
+  id        String      @id @default(cuid())
+  name      String
+  type      EventType
+  startDate DateTime?
+  endDate   DateTime?
+  budget    Decimal?
+  status    EventStatus @default(ACTIVE)
+  aiSummary String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  date        DateTime
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+
+  accountId   String?
+  account     Account? @relation(fields: [accountId], references: [id])
+
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+
+  amount      Decimal
+  direction   TransactionDirection
+  description String?
+  merchant    String?
+
+  category    String?
+  subcategory String?
+  treatment   Treatment
+  expenseType ExpenseType?
+  paymentMode PaymentMode?
+  source      TransactionSource
+
+  sourceFileId String?
+  sourceFile   StatementUpload? @relation(fields: [sourceFileId], references: [id])
+
+  confidence  Float?
+  duplicateOfTransactionId String?
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([ownerId])
+  @@index([date])
+  @@index([treatment])
+}
+
+model WealthRecord {
+  id          String   @id @default(cuid())
+  month       String
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+
+  recordType  String
+  assetType   String
+  platform    String?
+  amount      Decimal
+  isLiability Boolean  @default(false)
+  notes       String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([month])
+  @@index([ownerId])
+}
+
+model StatementUpload {
+  id          String       @id @default(cuid())
+  ownerId     String
+  accountId   String
+  account     Account      @relation(fields: [accountId], references: [id])
+
+  month       String
+  fileName    String
+  fileType    String
+  status      UploadStatus @default(UPLOADED)
+
+  uploadedAt  DateTime @default(now())
+  processedAt DateTime?
+
+  transactions Transaction[]
+}
+
+model Rule {
+  id          String      @id @default(cuid())
+  keyword     String
+  merchant    String?
+  category    String
+  subcategory String?
+  treatment   Treatment
+  expenseType ExpenseType?
+  priority    Int         @default(100)
+  createdAt   DateTime    @default(now())
+}
+
+enum AccountType {
+  BANK
+  CREDIT_CARD
+  INVESTMENT
+  CASH
+  OTHER
+}
+
+enum EventType {
+  TRIP
+  HOUSE_SETUP
+  FAMILY_FUNCTION
+  MEDICAL
+  WEDDING
+  OTHER
+}
+
+enum EventStatus {
+  ACTIVE
+  ENDED
+  ARCHIVED
+}
+
+enum TransactionDirection {
+  DEBIT
+  CREDIT
+}
+
+enum Treatment {
+  EXPENSE
+  INCOME
+  INVESTMENT
+  TRANSFER
+  CREDIT_CARD_PAYMENT
+  REFUND
+  LIABILITY
+  WEALTH_SNAPSHOT
+  DUPLICATE
+  UNKNOWN
+}
+
+enum ExpenseType {
+  HOUSEHOLD
+  PERSONAL_HARSH
+  PERSONAL_ANUBHUTI
+  TRAVEL
+  FAMILY
+  HEALTH
+  INVESTMENT
+  INCOME
+  TRANSFER
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  OTHER
+}
+
+enum TransactionSource {
+  STATEMENT
+  MANUAL_EVENT
+  MANUAL_RECORD
+  AI_GENERATED
+}
+
+enum UploadStatus {
+  UPLOADED
+  PARSED
+  NEEDS_REVIEW
+  COMPLETED
+  FAILED
+}

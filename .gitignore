@@ -8,3 +8,6 @@ out/
 dist/
 coverage/
 *.log
+uploads/
+dev.db
+dev.db-journal
