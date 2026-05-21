@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PaymentMode } from "@prisma/client";
 import { addEventExpense, endEvent } from "@/app/actions";
 import { PageHeader } from "@/components/PageHeader";
-import { BreakdownCard } from "@/components/BreakdownCard";
+import { SimpleBarChart, SimplePieChart } from "@/components/Charts";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEventSummary } from "@/lib/calculations/event";
@@ -61,11 +61,35 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         </div>
       </section>
 
-      <section className="mt-4 grid gap-3 px-4 sm:grid-cols-2">
-        <BreakdownCard title="Paid By" data={summary.byOwner} />
-        <BreakdownCard title="Category" data={summary.byCategory} />
-        <BreakdownCard title="Daily Spend" data={summary.byDate} />
-        <BreakdownCard title="Payment Mode" data={summary.byPaymentMode} />
+      <section className="mt-5 grid gap-3 px-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Category</h2>
+            <span className="text-sm font-medium text-ink/55">{formatMoney(summary.total)}</span>
+          </div>
+          <SimplePieChart data={summary.byCategory} />
+        </div>
+        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Paid By</h2>
+            <span className="text-sm font-medium text-ink/55">{formatMoney(summary.total)}</span>
+          </div>
+          <SimpleBarChart data={summary.byOwner} />
+        </div>
+        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Daily Spend</h2>
+            <span className="text-sm font-medium text-ink/55">{formatMoney(summary.total)}</span>
+          </div>
+          <SimpleBarChart data={summary.byDate} />
+        </div>
+        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Payment Mode</h2>
+            <span className="text-sm font-medium text-ink/55">{formatMoney(summary.total)}</span>
+          </div>
+          <SimplePieChart data={summary.byPaymentMode} />
+        </div>
       </section>
 
       {eventIsActive ? (
