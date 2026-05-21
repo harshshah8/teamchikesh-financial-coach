@@ -67,6 +67,12 @@ export async function addEventExpense(formData: FormData) {
 
   if (!eventId || !ownerId || !amount) return;
 
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { status: true } });
+  if (event?.status !== EventStatus.ACTIVE) {
+    revalidatePath(`/events/${eventId}`);
+    return;
+  }
+
   await prisma.transaction.create({
     data: {
       eventId,
@@ -83,17 +89,6 @@ export async function addEventExpense(formData: FormData) {
       source: TransactionSource.MANUAL_EVENT
     }
   });
-
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { status: true } });
-  if (event?.status === EventStatus.ENDED) {
-    const summary = await getEventSummary(eventId);
-    if (summary) {
-      await prisma.event.update({
-        where: { id: eventId },
-        data: { aiSummary: buildEventSummaryText(summary.event.name, summary.total, summary.transactionCount) }
-      });
-    }
-  }
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/");

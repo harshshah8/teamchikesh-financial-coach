@@ -3,7 +3,6 @@ import { PaymentMode } from "@prisma/client";
 import { addEventExpense, endEvent } from "@/app/actions";
 import { PageHeader } from "@/components/PageHeader";
 import { BreakdownCard } from "@/components/BreakdownCard";
-import { SimpleBarChart, SimplePieChart } from "@/components/Charts";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEventSummary } from "@/lib/calculations/event";
@@ -51,68 +50,59 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       </section>
 
       <section className="mt-5 px-4">
-        <div className="rounded-lg border border-black/10 bg-mint p-4 text-sm leading-6 text-ink shadow-soft">{currentSummaryText}</div>
+        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-semibold">Event Report</h2>
+              <p className="mt-1 text-sm leading-6 text-ink/65">{currentSummaryText}</p>
+            </div>
+            <span className="rounded-md bg-mint px-2 py-1 text-xs font-medium text-ink">{summary.event.status}</span>
+          </div>
+        </div>
       </section>
 
-      <section className="mt-5 grid gap-3 px-4 sm:grid-cols-2">
+      <section className="mt-4 grid gap-3 px-4 sm:grid-cols-2">
         <BreakdownCard title="Paid By" data={summary.byOwner} />
-        <BreakdownCard title="Category" data={summary.byCategory} variant="donut" />
+        <BreakdownCard title="Category" data={summary.byCategory} />
         <BreakdownCard title="Daily Spend" data={summary.byDate} />
-        <BreakdownCard title="Payment Mode" data={summary.byPaymentMode} variant="donut" />
+        <BreakdownCard title="Payment Mode" data={summary.byPaymentMode} />
       </section>
 
-      <section className="mt-5 px-4">
-        <form action={addEventExpense} className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
-          <h2 className="mb-4 font-semibold">Add Expense</h2>
-          <input type="hidden" name="eventId" value={summary.event.id} />
-          <div className="grid gap-3">
-            <select name="ownerId" className="h-12 rounded-md border border-black/15 px-3" required>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
-            <input name="amount" inputMode="decimal" placeholder="Amount" className="h-12 rounded-md border border-black/15 px-3" required />
-            <div className="grid grid-cols-2 gap-3">
-              <select name="category" className="h-12 rounded-md border border-black/15 px-3" defaultValue="Food">
-                {categories.map((category) => (
-                  <option key={category}>{category}</option>
-                ))}
-              </select>
-              <select name="paymentMode" className="h-12 rounded-md border border-black/15 px-3" defaultValue={PaymentMode.UPI}>
-                {Object.values(PaymentMode).map((mode) => (
-                  <option key={mode} value={mode}>
-                    {mode.replaceAll("_", " ")}
+      {eventIsActive ? (
+        <section className="mt-5 px-4">
+          <form action={addEventExpense} className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
+            <h2 className="mb-4 font-semibold">Add Expense</h2>
+            <input type="hidden" name="eventId" value={summary.event.id} />
+            <div className="grid gap-3">
+              <select name="ownerId" className="h-12 rounded-md border border-black/15 px-3" required>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
                   </option>
                 ))}
               </select>
+              <input name="amount" inputMode="decimal" placeholder="Amount" className="h-12 rounded-md border border-black/15 px-3" required />
+              <div className="grid grid-cols-2 gap-3">
+                <select name="category" className="h-12 rounded-md border border-black/15 px-3" defaultValue="Food">
+                  {categories.map((category) => (
+                    <option key={category}>{category}</option>
+                  ))}
+                </select>
+                <select name="paymentMode" className="h-12 rounded-md border border-black/15 px-3" defaultValue={PaymentMode.UPI}>
+                  {Object.values(PaymentMode).map((mode) => (
+                    <option key={mode} value={mode}>
+                      {mode.replaceAll("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <input name="date" type="date" className="h-12 rounded-md border border-black/15 px-3" />
+              <textarea name="notes" placeholder="Notes" className="min-h-24 rounded-md border border-black/15 p-3" />
+              <button className="interactive-button h-12 rounded-md bg-ink font-medium text-white">Save Expense</button>
             </div>
-            <input name="date" type="date" className="h-12 rounded-md border border-black/15 px-3" />
-            <textarea name="notes" placeholder="Notes" className="min-h-24 rounded-md border border-black/15 p-3" />
-            <button className="interactive-button h-12 rounded-md bg-ink font-medium text-white">Save Expense</button>
-          </div>
-        </form>
-      </section>
-
-      <section className="mt-5 grid gap-3 px-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
-          <h2 className="font-semibold">Paid By Chart</h2>
-          <SimpleBarChart data={summary.byOwner} />
-        </div>
-        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
-          <h2 className="font-semibold">Category Chart</h2>
-          <SimplePieChart data={summary.byCategory} />
-        </div>
-        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
-          <h2 className="font-semibold">Daily Spend Chart</h2>
-          <SimpleBarChart data={summary.byDate} />
-        </div>
-        <div className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
-          <h2 className="font-semibold">Payment Mode Chart</h2>
-          <SimplePieChart data={summary.byPaymentMode} />
-        </div>
-      </section>
+          </form>
+        </section>
+      ) : null}
     </main>
   );
 }

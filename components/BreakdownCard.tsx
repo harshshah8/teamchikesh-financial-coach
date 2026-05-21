@@ -9,12 +9,10 @@ const colors = ["#9BC8A7", "#F2B6A0", "#9EC5E5", "#F4D38A", "#C7B2DE", "#A7DAD8"
 
 export function BreakdownCard({
   title,
-  data,
-  variant = "bar"
+  data
 }: {
   title: string;
   data: BreakdownItem[];
-  variant?: "bar" | "donut";
 }) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
@@ -28,7 +26,6 @@ export function BreakdownCard({
         <p className="mt-4 text-sm text-ink/55">No data yet.</p>
       ) : (
         <div className="mt-4">
-          {variant === "donut" ? <Donut data={data} total={total} /> : null}
           <div className="space-y-3">
             {data.map((item, index) => {
               const percent = Math.round((item.value / total) * 100);
@@ -52,26 +49,6 @@ export function BreakdownCard({
         </div>
       )}
     </section>
-  );
-}
-
-function Donut({ data, total }: { data: BreakdownItem[]; total: number }) {
-  let cursor = 0;
-  const segments = data.map((item, index) => {
-    const start = cursor;
-    const end = cursor + (item.value / total) * 360;
-    cursor = end;
-    return `${colors[index % colors.length]} ${start}deg ${end}deg`;
-  });
-
-  return (
-    <div className="mb-5 flex items-center justify-center">
-      <div className="relative h-36 w-36 rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }}>
-        <div className="absolute inset-8 flex items-center justify-center rounded-full bg-white text-center">
-          <span className="text-sm font-semibold">{formatMoney(total)}</span>
-        </div>
-      </div>
-    </div>
   );
 }
 
