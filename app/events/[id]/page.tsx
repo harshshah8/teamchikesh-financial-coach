@@ -1,21 +1,31 @@
 import { notFound } from "next/navigation";
-import { PaymentMode } from "@prisma/client";
-import { addEventExpense, endEvent } from "@/app/actions";
 import { PageHeader } from "@/components/PageHeader";
 import { SimpleBarChart, SimplePieChart } from "@/components/Charts";
+import { EndTripButton } from "@/components/EndTripButton";
+import { EventExpenseForm } from "@/components/EventExpenseForm";
+import { EventTransactionHistory } from "@/components/EventTransactionHistory";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEventSummary } from "@/lib/calculations/event";
 import { formatMoney } from "@/lib/formatting/money";
-
-const categories = ["Food", "Travel", "Stay", "Shopping", "Activity", "Cash", "Other"];
+import { toNumber } from "@/lib/formatting/money";
+import { eventExpenseCategories, eventPaymentModes } from "@/lib/events/constants";
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
   const { id } = await params;
-  const [summary, users] = await Promise.all([
+  const [summary, users, historyTransactions] = await Promise.all([
     getEventSummary(id),
-    prisma.user.findMany({ orderBy: { name: "asc" } })
+    prisma.user.findMany({ orderBy: { name: "asc" } }),
+    prisma.transaction.findMany({
+      where: {
+        eventId: id,
+        treatment: "EXPENSE",
+        duplicateOfTransactionId: null
+      },
+      include: { owner: true },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }]
+    })
   ]);
 
   if (!summary) notFound();
@@ -40,12 +50,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         <div className="interactive-card rounded-lg border border-black/10 bg-white p-4 shadow-soft">
           <p className="text-sm text-ink/60">Status</p>
           <p className="mt-2 text-xl font-semibold">{summary.event.status}</p>
-          {eventIsActive ? (
-            <form action={endEvent} className="mt-3">
-              <input type="hidden" name="eventId" value={summary.event.id} />
-              <button className="interactive-button h-11 w-full rounded-md bg-clay font-medium text-white">Mark Ended</button>
-            </form>
-          ) : null}
+          {eventIsActive ? <EndTripButton eventId={summary.event.id} /> : null}
         </div>
       </section>
 
@@ -92,40 +97,32 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         </div>
       </section>
 
+      <EventTransactionHistory
+        users={users}
+        categories={eventExpenseCategories}
+        paymentModes={eventPaymentModes}
+        transactions={historyTransactions.map((transaction) => ({
+          id: transaction.id,
+          eventId: transaction.eventId ?? summary.event.id,
+          ownerId: transaction.ownerId,
+          ownerName: transaction.owner.name,
+          amount: toNumber(transaction.amount),
+          date: transaction.date.toISOString().slice(0, 10),
+          category: transaction.category ?? "Other",
+          paymentMode: transaction.paymentMode ?? "OTHER",
+          notes: transaction.notes ?? "",
+          description: transaction.description ?? "",
+          source: transaction.source
+        }))}
+      />
+
       {eventIsActive ? (
-        <section className="mt-5 px-4">
-          <form action={addEventExpense} className="rounded-lg border border-black/10 bg-white p-4 shadow-soft">
-            <h2 className="mb-4 font-semibold">Add Expense</h2>
-            <input type="hidden" name="eventId" value={summary.event.id} />
-            <div className="grid gap-3">
-              <select name="ownerId" className="h-12 rounded-md border border-black/15 px-3" required>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name}
-                  </option>
-                ))}
-              </select>
-              <input name="amount" inputMode="decimal" placeholder="Amount" className="h-12 rounded-md border border-black/15 px-3" required />
-              <div className="grid grid-cols-2 gap-3">
-                <select name="category" className="h-12 rounded-md border border-black/15 px-3" defaultValue="Food">
-                  {categories.map((category) => (
-                    <option key={category}>{category}</option>
-                  ))}
-                </select>
-                <select name="paymentMode" className="h-12 rounded-md border border-black/15 px-3" defaultValue={PaymentMode.UPI}>
-                  {Object.values(PaymentMode).map((mode) => (
-                    <option key={mode} value={mode}>
-                      {mode.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <input name="date" type="date" className="h-12 rounded-md border border-black/15 px-3" />
-              <textarea name="notes" placeholder="Notes" className="min-h-24 rounded-md border border-black/15 p-3" />
-              <button className="interactive-button h-12 rounded-md bg-ink font-medium text-white">Save Expense</button>
-            </div>
-          </form>
-        </section>
+        <EventExpenseForm
+          eventId={summary.event.id}
+          users={users}
+          categories={eventExpenseCategories}
+          paymentModes={eventPaymentModes}
+        />
       ) : null}
     </main>
   );

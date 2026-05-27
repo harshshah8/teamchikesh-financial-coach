@@ -11,6 +11,19 @@ import { getEventSummary } from "@/lib/calculations/event";
 import { formatMoney } from "@/lib/formatting/money";
 import { classifyStatementRow, parseStatementFile } from "@/lib/parsing/statement";
 
+type EventActionState = {
+  ok: boolean;
+  message: string;
+  eventId?: string;
+  nonce: number;
+};
+
+const emptyEventActionState: EventActionState = {
+  ok: false,
+  message: "",
+  nonce: 0
+};
+
 export async function login(_: unknown, formData: FormData) {
   const passcode = String(formData.get("passcode") ?? "");
 
@@ -58,6 +71,14 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function addEventExpense(formData: FormData) {
+  await saveEventExpense(formData);
+}
+
+export async function addEventExpenseFeedback(_: EventActionState = emptyEventActionState, formData: FormData): Promise<EventActionState> {
+  return saveEventExpense(formData);
+}
+
+async function saveEventExpense(formData: FormData): Promise<EventActionState> {
   const eventId = String(formData.get("eventId"));
   const ownerId = String(formData.get("ownerId"));
   const amount = Number(formData.get("amount"));
@@ -66,12 +87,14 @@ export async function addEventExpense(formData: FormData) {
   const date = String(formData.get("date") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();
 
-  if (!eventId || !ownerId || !amount) return;
+  if (!eventId || !ownerId || !amount) {
+    return { ok: false, message: "Add an owner and amount before saving.", eventId, nonce: Date.now() };
+  }
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { status: true } });
   if (event?.status !== EventStatus.ACTIVE) {
     revalidatePath(`/events/${eventId}`);
-    return;
+    return { ok: false, message: "This trip is ended. Reopen support is not available yet.", eventId, nonce: Date.now() };
   }
 
   await prisma.transaction.create({
@@ -93,9 +116,18 @@ export async function addEventExpense(formData: FormData) {
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/");
+  return { ok: true, message: "Expense saved.", eventId, nonce: Date.now() };
 }
 
 export async function endEvent(formData: FormData) {
+  await markEventEnded(formData);
+}
+
+export async function endEventFeedback(_: EventActionState = emptyEventActionState, formData: FormData): Promise<EventActionState> {
+  return markEventEnded(formData);
+}
+
+async function markEventEnded(formData: FormData): Promise<EventActionState> {
   const eventId = String(formData.get("eventId"));
   const summary = await getEventSummary(eventId);
   const aiSummary =
@@ -114,10 +146,84 @@ export async function endEvent(formData: FormData) {
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/events");
+  return { ok: true, message: "Trip ended.", eventId, nonce: Date.now() };
 }
 
 function buildEventSummaryText(eventName: string, total: number, transactionCount: number) {
   return `${eventName} has total tracked spend of ${formatMoney(total)} across ${transactionCount} expense entries.`;
+}
+
+export async function updateEventTransactionFeedback(_: EventActionState = emptyEventActionState, formData: FormData): Promise<EventActionState> {
+  const eventId = String(formData.get("eventId") ?? "");
+  const transactionId = String(formData.get("transactionId") ?? "");
+  const ownerId = String(formData.get("ownerId") ?? "");
+  const amount = Number(formData.get("amount"));
+  const category = String(formData.get("category") ?? "Other");
+  const paymentMode = String(formData.get("paymentMode") ?? "OTHER") as PaymentMode;
+  const date = String(formData.get("date") ?? "");
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  if (!eventId || !transactionId || !ownerId || !amount) {
+    return { ok: false, message: "Could not update this expense. Check owner and amount.", eventId, nonce: Date.now() };
+  }
+
+  const transaction = await prisma.transaction.findFirst({
+    where: {
+      id: transactionId,
+      eventId,
+      source: TransactionSource.MANUAL_EVENT
+    }
+  });
+
+  if (!transaction) {
+    return { ok: false, message: "Only manually added trip expenses can be edited here.", eventId, nonce: Date.now() };
+  }
+
+  await prisma.transaction.update({
+    where: { id: transactionId },
+    data: {
+      ownerId,
+      amount,
+      category,
+      paymentMode,
+      date: date ? new Date(date) : transaction.date,
+      description: notes || category,
+      notes
+    }
+  });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/");
+  revalidatePath("/reports");
+  return { ok: true, message: "Expense updated.", eventId, nonce: Date.now() };
+}
+
+export async function deleteEventTransactionFeedback(_: EventActionState = emptyEventActionState, formData: FormData): Promise<EventActionState> {
+  const eventId = String(formData.get("eventId") ?? "");
+  const transactionId = String(formData.get("transactionId") ?? "");
+
+  if (!eventId || !transactionId) {
+    return { ok: false, message: "Could not delete this expense.", eventId, nonce: Date.now() };
+  }
+
+  const transaction = await prisma.transaction.findFirst({
+    where: {
+      id: transactionId,
+      eventId,
+      source: TransactionSource.MANUAL_EVENT
+    }
+  });
+
+  if (!transaction) {
+    return { ok: false, message: "Only manually added trip expenses can be deleted here.", eventId, nonce: Date.now() };
+  }
+
+  await prisma.transaction.delete({ where: { id: transactionId } });
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/");
+  revalidatePath("/reports");
+  return { ok: true, message: "Expense deleted.", eventId, nonce: Date.now() };
 }
 
 export async function addWealthRecord(formData: FormData) {

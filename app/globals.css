@@ -66,3 +66,15 @@ a {
 .interactive-button:active {
   transform: translateY(0);
 }
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(-10px) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(150px) rotate(260deg);
+  }
+}
